@@ -1,0 +1,9 @@
+target/
+*.class
+.vscode/
+.idea/
+*.log
+.DS_Store
+*.iml
+.env
+config.local.properties

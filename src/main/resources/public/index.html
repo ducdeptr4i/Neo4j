@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý Nhân thân – Gia phả Huỳnh</title>
+  <meta name="description" content="Website quản lý nhân thân – gia phả 20 người, xem sơ đồ gia phả, tìm xưng hô, kiểm tra kết hôn huyết thống theo Luật HN&GĐ 2014" />
+
+  <!-- Bootstrap 5.3 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- vis-network -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/dist/dist/vis-network.min.css" />
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand sticky-top" id="mainNav">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+      <i class="bi bi-diagram-3-fill text-primary-glow fs-4"></i>
+      <span class="fw-700">Gia Phả Huỳnh</span>
+      <span class="badge badge-neo4j ms-1">Neo4j</span>
+    </a>
+    <div class="d-flex align-items-center gap-3">
+      <span id="navStatus" class="status-badge status-checking">
+        <span class="status-dot"></span> Đang kết nối…
+      </span>
+    </div>
+  </div>
+</nav>
+
+<!-- TAB NAV -->
+<div class="tab-nav-wrapper">
+  <ul class="nav nav-tabs-custom container-fluid px-4" id="mainTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link-custom active" id="tab-graph" data-bs-toggle="tab" data-bs-target="#pane-graph" type="button" role="tab" aria-label="Sơ đồ gia phả">
+        <i class="bi bi-diagram-2"></i><span>Sơ đồ gia phả</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link-custom" id="tab-kinship" data-bs-toggle="tab" data-bs-target="#pane-kinship" type="button" role="tab" aria-label="Tìm xưng hô">
+        <i class="bi bi-people"></i><span>Tìm xưng hô</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link-custom" id="tab-marriage" data-bs-toggle="tab" data-bs-target="#pane-marriage" type="button" role="tab" aria-label="Kiểm tra kết hôn">
+        <i class="bi bi-heart"></i><span>Kiểm tra kết hôn</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link-custom" id="tab-persons" data-bs-toggle="tab" data-bs-target="#pane-persons" type="button" role="tab" aria-label="Danh sách người">
+        <i class="bi bi-person-lines-fill"></i><span>Danh sách</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link-custom" id="tab-quality" data-bs-toggle="tab" data-bs-target="#pane-quality" type="button" role="tab" aria-label="Chất lượng dữ liệu">
+        <i class="bi bi-shield-check"></i><span>Chất lượng DL</span>
+      </button>
+    </li>
+  </ul>
+</div>
+
+<!-- TAB CONTENT -->
+<div class="tab-content container-fluid px-4 py-3" id="mainTabContent">
+
+  <!-- TAB 1: SƠ ĐỒ GIA PHẢ -->
+  <div class="tab-pane fade show active" id="pane-graph" role="tabpanel">
+    <div class="row g-3">
+      <!-- Toolbar -->
+      <div class="col-12">
+        <div class="card-glass d-flex flex-wrap align-items-center gap-3 p-3">
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-custom btn-sm" id="btnFit" aria-label="Vừa khung"><i class="bi bi-arrows-fullscreen"></i> Vừa khung</button>
+            <button class="btn btn-outline-custom btn-sm" id="btnZoomIn" aria-label="Phóng to"><i class="bi bi-zoom-in"></i></button>
+            <button class="btn btn-outline-custom btn-sm" id="btnZoomOut" aria-label="Thu nhỏ"><i class="bi bi-zoom-out"></i></button>
+          </div>
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="switchShowEnded" checked />
+            <label class="form-check-label text-muted small" for="switchShowEnded">Hiện hôn nhân đã kết thúc</label>
+          </div>
+          <div class="ms-auto legend-row">
+            <span class="legend-item"><span class="legend-dot male"></span>Nam</span>
+            <span class="legend-item"><span class="legend-dot female"></span>Nữ</span>
+            <span class="legend-item"><span class="legend-dot deceased"></span>Đã mất</span>
+            <span class="legend-item"><span class="legend-line active-marriage"></span>Hôn nhân còn</span>
+            <span class="legend-item"><span class="legend-line widowed"></span>Góa</span>
+            <span class="legend-item"><span class="legend-line divorced"></span>Ly hôn</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Graph canvas + Detail panel -->
+      <div class="col-lg-8 col-12">
+        <div class="card-glass p-0 overflow-hidden">
+          <div id="graphNetwork" style="height:620px;"></div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-12">
+        <div class="card-glass h-100" id="personDetailPanel">
+          <div class="text-center text-muted py-5">
+            <i class="bi bi-cursor-fill fs-1 opacity-25"></i>
+            <p class="mt-3">Nhấp vào một người trong sơ đồ để xem thông tin chi tiết</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: TÌM XƯNG HÔ -->
+  <div class="tab-pane fade" id="pane-kinship" role="tabpanel">
+    <div class="row g-3">
+      <div class="col-12">
+        <div class="card-glass p-4">
+          <h5 class="section-title"><i class="bi bi-people-fill text-accent"></i> Tìm cách xưng hô giữa 2 người</h5>
+          <div class="row g-3 align-items-end mt-1">
+            <div class="col-md-4">
+              <label class="form-label small fw-600" for="kinA">Người A</label>
+              <select class="form-select select-custom" id="kinA" aria-label="Chọn người A"></select>
+            </div>
+            <div class="col-md-auto text-center">
+              <button class="btn btn-icon-round" id="btnSwapKin" aria-label="Đổi vai A ⇄ B" title="Đổi vai">
+                <i class="bi bi-arrow-left-right"></i>
+              </button>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-600" for="kinB">Người B</label>
+              <select class="form-select select-custom" id="kinB" aria-label="Chọn người B"></select>
+            </div>
+            <div class="col-md-auto">
+              <div class="d-flex gap-3 align-items-center flex-wrap">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" id="kinIncludeDivorced" />
+                  <label class="form-check-label small" for="kinIncludeDivorced">Tính hôn nhân đã ly hôn</label>
+                </div>
+                <select class="form-select form-select-sm select-custom" id="kinRegion" style="width:auto;" aria-label="Vùng miền">
+                  <option value="COMMON">Phổ thông</option>
+                  <option value="NORTH">Miền Bắc</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-3 flex-wrap">
+            <button class="btn btn-primary-glow" id="btnFindKin" aria-label="Tìm xưng hô"><i class="bi bi-search"></i> Tìm xưng hô</button>
+            <button class="btn btn-outline-secondary btn-sm" id="btnKinExample" aria-label="Ví dụ nhanh">
+              <i class="bi bi-lightning-charge"></i> Ví dụ nhanh
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kết quả xưng hô -->
+      <div class="col-12" id="kinResult" style="display:none;">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <div class="card-glass p-4" id="kinResultCard"></div>
+          </div>
+          <div class="col-md-4">
+            <div class="card-glass p-0 overflow-hidden">
+              <div id="kinGraph" style="height:400px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: KIỂM TRA KẾT HÔN -->
+  <div class="tab-pane fade" id="pane-marriage" role="tabpanel">
+    <div class="row g-3">
+      <div class="col-12">
+        <div class="card-glass p-4">
+          <h5 class="section-title"><i class="bi bi-heart-fill text-accent"></i> Kiểm tra kết hôn – vi phạm huyết thống</h5>
+          <div class="row g-3 align-items-end mt-1">
+            <div class="col-md-5">
+              <label class="form-label small fw-600" for="marA">Người A</label>
+              <select class="form-select select-custom" id="marA" aria-label="Chọn người A"></select>
+            </div>
+            <div class="col-md-auto text-center">
+              <button class="btn btn-icon-round" id="btnSwapMar" aria-label="Đổi vai A ⇄ B" title="Đổi vai">
+                <i class="bi bi-arrow-left-right"></i>
+              </button>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-600" for="marB">Người B</label>
+              <select class="form-select select-custom" id="marB" aria-label="Chọn người B"></select>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-3 flex-wrap">
+            <button class="btn btn-primary-glow" id="btnCheckMar" aria-label="Kiểm tra hôn nhân"><i class="bi bi-shield-check"></i> Kiểm tra</button>
+            <button class="btn btn-outline-secondary btn-sm" id="btnMarExample" aria-label="Ví dụ nhanh M1-M11">
+              <i class="bi bi-lightning-charge"></i> Ví dụ nhanh
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kết quả kiểm tra hôn nhân -->
+      <div class="col-12" id="marResult" style="display:none;">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <div class="card-glass p-4" id="marResultCard"></div>
+          </div>
+          <div class="col-md-4">
+            <div class="card-glass p-0 overflow-hidden">
+              <div id="marGraph" style="height:400px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: DANH SÁCH NGƯỜI -->
+  <div class="tab-pane fade" id="pane-persons" role="tabpanel">
+    <div class="card-glass p-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h5 class="section-title mb-0"><i class="bi bi-person-lines-fill text-accent"></i> Danh sách 20 người</h5>
+        <div class="d-flex gap-2 flex-wrap">
+          <input class="form-control form-control-sm search-input" id="personSearch" placeholder="🔍 Tìm kiếm tên..." style="width:200px;" aria-label="Tìm kiếm người" />
+          <select class="form-select form-select-sm select-custom" id="genderFilter" style="width:130px;" aria-label="Lọc theo giới">
+            <option value="">Tất cả giới</option>
+            <option value="Nam">Nam</option>
+            <option value="Nữ">Nữ</option>
+          </select>
+          <select class="form-select form-select-sm select-custom" id="aliveFilter" style="width:150px;" aria-label="Lọc trạng thái">
+            <option value="">Tất cả trạng thái</option>
+            <option value="alive">Còn sống</option>
+            <option value="deceased">Đã mất</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-custom" id="personsTable">
+          <thead>
+            <tr>
+              <th class="sortable" data-col="personId">ID <i class="bi bi-arrow-down-up"></i></th>
+              <th class="sortable" data-col="fullName">Họ tên <i class="bi bi-arrow-down-up"></i></th>
+              <th>Giới</th>
+              <th class="sortable" data-col="dateOfBirth">Ngày sinh <i class="bi bi-arrow-down-up"></i></th>
+              <th>Tuổi</th>
+              <th>Nghề nghiệp</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="personsTableBody">
+            <tr><td colspan="7" class="text-center py-4"><div class="spinner-custom mx-auto"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: CHẤT LƯỢNG DỮ LIỆU -->
+  <div class="tab-pane fade" id="pane-quality" role="tabpanel">
+    <div class="card-glass p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h5 class="section-title mb-0"><i class="bi bi-shield-check text-accent"></i> Kiểm tra chất lượng dữ liệu</h5>
+        <button class="btn btn-outline-custom btn-sm" id="btnReloadQuality" aria-label="Tải lại">
+          <i class="bi bi-arrow-clockwise"></i> Tải lại
+        </button>
+      </div>
+      <div id="qualitySummary" class="mb-3"></div>
+      <div id="qualityList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast thông báo -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="appToast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastMsg">Thông báo</div>
+      <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Đóng"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal chi tiết ví dụ nhanh (kinship) -->
+<div class="modal fade" id="kinExampleModal" tabindex="-1" aria-labelledby="kinExampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content modal-glass">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="kinExampleModalLabel"><i class="bi bi-lightning-charge"></i> Chọn ví dụ xưng hô (T1–T23)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body" id="kinExampleList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ví dụ hôn nhân -->
+<div class="modal fade" id="marExampleModal" tabindex="-1" aria-labelledby="marExampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content modal-glass">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="marExampleModalLabel"><i class="bi bi-lightning-charge"></i> Chọn ví dụ kiểm tra hôn nhân (M1–M11)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body" id="marExampleList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/dist/vis-network.min.js"></script>
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>
